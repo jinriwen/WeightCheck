@@ -1,0 +1,17 @@
+{
+  "name": "热量记录 · Calorie Tracker",
+  "short_name": "热量记录",
+  "description": "记录每日摄入热量,按基础代谢计算每日上限,三餐分配与剩余热量提醒。",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f1116",
+  "theme_color": "#0f1116",
+  "lang": "zh-CN",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
