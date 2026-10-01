@@ -1,5 +1,5 @@
 // 离线缓存。改动文件后把 VERSION 加 1,手机上刷新即可拿到新版本。
-const VERSION = 'cal-v1';
+const VERSION = 'cal-v2';
 const ASSETS = [
   './',
   './index.html',

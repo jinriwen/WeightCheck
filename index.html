@@ -586,25 +586,33 @@ document.getElementById('next').onclick=()=>shiftDay(1);
 document.getElementById('today').onclick=()=>{ view=ymd(new Date()); renderAll(); };
 addEventListener('scroll',()=>document.querySelector('header').classList.toggle('stuck',scrollY>4),{passive:true});
 
-/* 表单:联动计算热量 */
-function syncForm(form){
-  const nEl=form.querySelector('[data-f="n"]'), qEl=form.querySelector('[data-f="q"]'),
-        kEl=form.querySelector('[data-f="k"]'), uEl=form.querySelector('[data-unit]');
-  const f=findFood(nEl.value);
+/* 表单:只重算热量,绝不回写用户正在输入的数量 */
+function recalc(form){
+  const qEl=form.querySelector('[data-f="q"]'), kEl=form.querySelector('[data-f="k"]'),
+        uEl=form.querySelector('[data-unit]'), f=findFood(form.querySelector('[data-f="n"]').value);
   uEl.textContent = f? (f.u==='p'? f.s : 'g') : 'g';
+  if(!f) return;                     // 自定义食物:热量由用户自己填,不覆盖
+  const raw=qEl.value.trim();
+  kEl.value = raw==='' ? '' : r0(f.k*(parseFloat(raw)||0)/(f.u==='p'?1:100));
+}
+/* 换食物时才填默认数量:单位变了(g↔个/杯)或数量为空才重置,否则保留用户输入 */
+function pickFood(form){
+  const qEl=form.querySelector('[data-f="q"]'), uEl=form.querySelector('[data-unit]'),
+        f=findFood(form.querySelector('[data-f="n"]').value);
   if(f){
-    const q=parseFloat(qEl.value);
-    if(!(q>0)) qEl.value = f.u==='p'?1:100;
-    kEl.value = r0(f.k*(parseFloat(qEl.value)||0)/(f.u==='p'?1:100));
+    const nu = f.u==='p'? f.s : 'g';
+    if(nu!==uEl.textContent || !(parseFloat(qEl.value)>0)) qEl.value = f.u==='p'?1:100;
   }
+  recalc(form);
 }
 document.addEventListener('input',e=>{
-  const form=e.target.closest('.form');
-  if(form && e.target.matches('[data-f="n"],[data-f="q"]')) syncForm(form);
+  const form=e.target.closest('.form'); if(!form) return;
+  if(e.target.matches('[data-f="n"]')) pickFood(form);
+  else if(e.target.matches('[data-f="q"]')) recalc(form);   // 只算,不改数量
 });
 document.addEventListener('change',e=>{
   const form=e.target.closest('.form');
-  if(form && e.target.matches('[data-f="n"]')) syncForm(form);
+  if(form && e.target.matches('[data-f="n"]')) pickFood(form);
 });
 
 function addFood(wrap){
@@ -613,7 +621,10 @@ function addFood(wrap){
         kEl=wrap.querySelector('[data-f="k"]'), uEl=wrap.querySelector('[data-unit]');
   const name=nEl.value.trim(), kcal=r0(parseFloat(kEl.value));
   if(!name){ nEl.focus(); return toast('请输入食物名称'); }
-  if(!(kcal>0)){ kEl.focus(); return toast('请填写热量 kcal'); }
+  if(!(kcal>0)){
+    if(findFood(name) && !(parseFloat(qEl.value)>0)){ qEl.focus(); return toast('请填写数量'); }
+    kEl.focus(); return toast('请填写热量 kcal');
+  }
   const q=parseFloat(qEl.value), unit=uEl.textContent;
   if(!findFood(name) && q>0 && unit==='g')
     S.custom.unshift({n:name,k:r0(kcal/q*100)}), S.custom.splice(60);
@@ -631,7 +642,9 @@ document.addEventListener('click',e=>{
     const form=pick.closest('.form');
     form.querySelector('[data-f="n"]').value=pick.dataset.pick;
     form.querySelector('[data-f="q"]').value='';
-    syncForm(form); form.querySelector('[data-f="q"]').focus();
+    pickFood(form);
+    const q=form.querySelector('[data-f="q"]');
+    q.focus(); try{ q.select(); }catch(e){}   // 选中默认值,直接敲数字就是覆盖
     return;
   }
   const add=e.target.closest('[data-addbtn]');
